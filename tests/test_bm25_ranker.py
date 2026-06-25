@@ -66,5 +66,25 @@ class TestBM25Ranker(unittest.TestCase):
         self.assertEqual(ranked[0]["score"], 0.6)
         self.assertEqual(ranked[1]["score"], 0.6)
 
+    def test_hybrid_rerank_normal(self):
+        papers = [
+            {"title": "Lung cancer efficacy", "abstract": "Study on immunotherapy and lung cancer.", "pmid": "1"},
+            {"title": "Diabetes study", "abstract": "Insulin treatment for type 2 diabetes.", "pmid": "2"},
+        ]
+        semantic_scores = [0.9, 0.1]
+        
+        # Rank by term "immunotherapy"
+        from research_agent.bm25_ranker import hybrid_rerank
+        ranked = hybrid_rerank("immunotherapy", papers, semantic_scores)
+        self.assertEqual(len(ranked), 2)
+        self.assertEqual(ranked[0]["pmid"], "1")
+        self.assertGreater(ranked[0]["score"], ranked[1]["score"])
+        self.assertEqual(ranked[0]["semantic_score"], 0.9)
+        self.assertEqual(ranked[1]["semantic_score"], 0.1)
+
+    def test_hybrid_rerank_empty_papers(self):
+        from research_agent.bm25_ranker import hybrid_rerank
+        self.assertEqual(hybrid_rerank("cancer", [], []), [])
+
 if __name__ == "__main__":
     unittest.main()
