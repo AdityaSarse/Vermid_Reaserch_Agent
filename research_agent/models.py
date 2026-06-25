@@ -37,7 +37,15 @@ class Paper(BaseModel):
     )
     score: float = Field(
         ..., 
-        description="The calculated BM25 Okapi relevance score relative to the question."
+        description="The calculated hybrid (BM25 + Semantic) relevance score relative to the question."
+    )
+    bm25_score: Optional[float] = Field(
+        None,
+        description="The individual BM25 relevance score before normalization."
+    )
+    semantic_score: Optional[float] = Field(
+        None,
+        description="The individual semantic relevance score before normalization."
     )
 
 class ResearchResponse(BaseModel):
