@@ -36,6 +36,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from research_agent.embeddings import get_model
+
+@app.on_event("startup")
+async def startup_event():
+    logger.info("Pre-loading embedding model...")
+    get_model()
+    logger.info("Model ready.")
+
 @app.post(
     "/research",
     response_model=ResearchResponse,
