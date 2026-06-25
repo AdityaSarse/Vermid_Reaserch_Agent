@@ -61,7 +61,16 @@ class TestMain(unittest.TestCase):
         ]
         mock_search.return_value = mock_papers
         mock_rank.return_value = [
-            {"title": "Test Paper", "abstract": "Abstract", "pmid": "1", "authors": ["A B"], "year": "2023", "score": 1.5}
+            {
+                "title": "Test Paper", 
+                "abstract": "Abstract", 
+                "pmid": "1", 
+                "authors": ["A B"], 
+                "year": "2023", 
+                "score": 0.76,
+                "bm25_score": 0.4,
+                "semantic_score": 0.9
+            }
         ]
         
         if HAS_TEST_CLIENT:
@@ -71,7 +80,9 @@ class TestMain(unittest.TestCase):
             self.assertEqual(data["question"], "test query")
             self.assertEqual(len(data["papers"]), 1)
             self.assertEqual(data["papers"][0]["pmid"], "1")
-            self.assertEqual(data["papers"][0]["score"], 1.5)
+            self.assertEqual(data["papers"][0]["score"], 0.76)
+            self.assertEqual(data["papers"][0]["bm25_score"], 0.4)
+            self.assertEqual(data["papers"][0]["semantic_score"], 0.9)
         else:
             from research_agent.main import research
             q = QuestionInput(question="test query")
@@ -79,7 +90,9 @@ class TestMain(unittest.TestCase):
             self.assertEqual(response.question, "test query")
             self.assertEqual(len(response.papers), 1)
             self.assertEqual(response.papers[0].pmid, "1")
-            self.assertEqual(response.papers[0].score, 1.5)
+            self.assertEqual(response.papers[0].score, 0.76)
+            self.assertEqual(response.papers[0].bm25_score, 0.4)
+            self.assertEqual(response.papers[0].semantic_score, 0.9)
 
     @patch("research_agent.main.search_pubmed")
     def test_research_endpoint_pubmed_error(self, mock_search):
