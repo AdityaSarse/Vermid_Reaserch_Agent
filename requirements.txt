@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+biopython
+rank-bm25
+pydantic
+python-dotenv
+pypdf
+python-docx
+httpx

@@ -8,7 +8,8 @@ logger = logging.getLogger(__name__)
 
 def tokenize(text: str) -> List[str]:
     """
-    Clean and tokenize text by converting to lowercase and stripping punctuation.
+    Clean and tokenize text by converting to lowercase, stripping HTML/XML tags,
+    and stripping punctuation.
     This guarantees that terms with trailing punctuation match query terms correctly.
     
     Args:
@@ -19,8 +20,10 @@ def tokenize(text: str) -> List[str]:
     """
     if not text:
         return []
+    # Strip HTML/XML tags if present
+    cleaned_text = re.sub(r"<[^>]+>", "", text)
     # Using regex to extract words (alphanumeric sequences), discarding punctuation
-    return re.findall(r"\b\w+\b", text.lower())
+    return re.findall(r"\b\w+\b", cleaned_text.lower())
 
 def rank_papers(question: str, papers: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
@@ -49,9 +52,17 @@ def rank_papers(question: str, papers: List[Dict[str, Any]]) -> List[Dict[str, A
         full_text = f"{title} {abstract}"
         corpus.append(tokenize(full_text))
 
+    query_tokens = tokenize(question)
+    
+    # Guard against empty query tokens (e.g. only punctuation like "???")
+    if not query_tokens:
+        logger.warning(f"No valid tokens found in question: '{question}'. Setting scores to 0.0.")
+        for paper in papers:
+            paper["score"] = 0.0
+        return papers[:TOP_K]
+
     # Step 2: Initialize BM25Okapi ranker and calculate relevance scores
     bm25 = BM25Okapi(corpus)
-    query_tokens = tokenize(question)
     scores = bm25.get_scores(query_tokens)
 
     # Step 3: Map calculated scores back to each paper object
