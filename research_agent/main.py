@@ -5,6 +5,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from research_agent.models import QuestionInput, ResearchResponse, Paper
 from research_agent.pubmed_client import search_pubmed
 from research_agent.bm25_ranker import rank_papers
+from research_agent.config import TOP_K
+from research_agent.faiss_store import save_to_store, search_store
+from research_agent.embeddings import embed_texts, embed_single
 
 # Configure logging format and levels
 logging.basicConfig(
@@ -41,49 +44,67 @@ app.add_middleware(
 )
 def research(input: QuestionInput):
     """
-    Search NCBI PubMed for papers matching the user's question,
-    calculate BM25 relevance scores across abstracts, and return
-    the ranked results.
+    Search local FAISS database first for semantic matches, falling back to NCBI PubMed
+    if not cached. Newly fetched papers are embedded and cached to FAISS, and ranked.
     """
-    # Clean input question
-    query_text = input.question.strip()
-    if not query_text:
+    if not input.question.strip():
         raise HTTPException(
             status_code=400, 
             detail="Question cannot be empty or contain only whitespace"
         )
 
-    start_time = time.time()
-    logger.info(f"Received research request for query: '{query_text}'")
+    start = time.time()
+    logger.info(f"Received research request for query: '{input.question}'")
 
-    # Fetch papers from NCBI PubMed
+    # 1. Try FAISS first
     try:
-        papers = search_pubmed(query_text)
+        query_vec = embed_single(input.question)
+        cached = search_store(query_vec, top_k=TOP_K)
+    except Exception as e:
+        logger.warning(f"FAISS search failed, falling back to PubMed: {e}", exc_info=True)
+        cached = None
+
+    if cached:
+        logger.info("Serving results from FAISS cache.")
+        return ResearchResponse(
+            question=input.question,
+            papers=[Paper(**p) for p in cached]
+        )
+
+    # 2. Fallback to PubMed
+    try:
+        papers = search_pubmed(input.question)
     except RuntimeError as re:
-        # Gracefully handle known integration/network failures
         logger.error(f"NCBI PubMed API error during query: {re}")
         raise HTTPException(
             status_code=503,
             detail="PubMed service is temporarily unavailable. Please try again later."
         )
     except Exception as e:
-        # Handle other unexpected runtime exceptions to prevent full server crashes
         logger.error(f"Unexpected error retrieving publications: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail="An internal server error occurred while processing research results."
         )
 
-    # If no results are returned, inform the client with a 404 Status
     if not papers:
         raise HTTPException(
             status_code=404, 
-            detail=f"No PubMed articles found matching the term: '{query_text}'"
+            detail=f"No PubMed articles found matching the term: '{input.question}'"
         )
 
-    # Rank the papers using BM25
+    # 3. Embed and save to FAISS
     try:
-        ranked_papers = rank_papers(query_text, papers)
+        texts = [p["title"] + " " + p["abstract"] for p in papers]
+        embeddings = embed_texts(texts)
+        save_to_store(embeddings, papers)
+    except Exception as e:
+        logger.error(f"Failed to embed/save publications to FAISS cache: {e}", exc_info=True)
+        # We continue to rank and return results even if caching fails
+
+    # 4. Rank and return
+    try:
+        ranked = rank_papers(input.question, papers)
     except Exception as e:
         logger.error(f"Ranking algorithm failed: {e}", exc_info=True)
         raise HTTPException(
@@ -91,13 +112,12 @@ def research(input: QuestionInput):
             detail="Failed to rank the retrieved research papers."
         )
 
-    elapsed_time = round(time.time() - start_time, 2)
-    logger.info(f"Request resolved in {elapsed_time}s. Returning top {len(ranked_papers)} papers.")
+    elapsed = round(time.time() - start, 2)
+    logger.info(f"Request resolved in {elapsed}s. Returning top {len(ranked)} papers.")
 
-    # Return structured response
     return ResearchResponse(
-        question=query_text,
-        papers=[Paper(**p) for p in ranked_papers]
+        question=input.question,
+        papers=[Paper(**p) for p in ranked]
     )
 
 @app.get(
