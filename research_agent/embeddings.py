@@ -33,3 +33,7 @@ def score_papers_semantic(question: str, papers: list) -> list:
         paper["semantic_score"] = round(float(scores[i]), 4)
     
     return papers
+
+def embed_single(text: str) -> np.ndarray:
+    model = get_model()
+    return model.encode([text])[0]
