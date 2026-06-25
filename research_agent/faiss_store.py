@@ -74,3 +74,30 @@ def search_store(query_embedding: np.ndarray, top_k: int = 5):
 
     logger.info(f"FAISS returned {len(results)} results from local store.")
     return results
+
+def search_store_full(query_embedding: np.ndarray, top_k: int = 20):
+    """Return more candidates from FAISS for hybrid reranking."""
+    if not os.path.exists(INDEX_PATH):
+        return None, None
+
+    index = faiss.read_index(INDEX_PATH)
+    with open(METADATA_PATH) as f:
+        metadata = json.load(f)
+
+    vec = np.array([query_embedding]).astype("float32")
+    faiss.normalize_L2(vec)
+
+    k = min(top_k, index.ntotal)
+    scores, indices = index.search(vec, k)
+
+    results = []
+    semantic_scores = []
+
+    for score, idx in zip(scores[0], indices[0]):
+        if idx == -1:
+            continue
+        results.append(metadata[idx].copy())
+        semantic_scores.append(float(score))
+
+    logger.info(f"FAISS returned {len(results)} candidates for hybrid reranking.")
+    return results, semantic_scores
