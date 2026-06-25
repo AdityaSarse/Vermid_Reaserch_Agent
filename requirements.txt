@@ -7,3 +7,6 @@ python-dotenv
 pypdf
 python-docx
 httpx
+sentence-transformers
+torch
+scikit-learn
