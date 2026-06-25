@@ -1,0 +1,54 @@
+from pydantic import BaseModel, Field
+from typing import List, Optional
+
+class QuestionInput(BaseModel):
+    """
+    Schema representing the incoming user request payload for research querying.
+    """
+    question: str = Field(
+        ...,
+        description="The medical research query or question to be searched on PubMed and ranked by BM25.",
+        json_schema_extra={"placeholder": "E.g., What is the efficacy of immunotherapy in stage IV lung cancer?"}
+    )
+
+class Paper(BaseModel):
+    """
+    Schema representing a single medical article's metadata along with its BM25 relevance score.
+    """
+    title: str = Field(
+        ..., 
+        description="The title of the PubMed publication."
+    )
+    pmid: str = Field(
+        ..., 
+        description="PubMed Unique Identifier (PMID)."
+    )
+    abstract: str = Field(
+        ..., 
+        description="Concatenated text of the article's abstract."
+    )
+    authors: List[str] = Field(
+        default_factory=list, 
+        description="List of authors, formatted as 'LastName ForeName'."
+    )
+    year: Optional[str] = Field(
+        None, 
+        description="Publication year, fallback to MedlineDate string if specific year is not available."
+    )
+    score: float = Field(
+        ..., 
+        description="The calculated BM25 Okapi relevance score relative to the question."
+    )
+
+class ResearchResponse(BaseModel):
+    """
+    Schema representing the unified research response returned by the agent.
+    """
+    question: str = Field(
+        ..., 
+        description="The original search query."
+    )
+    papers: List[Paper] = Field(
+        ..., 
+        description="The sorted list of top-ranked research papers relative to the query."
+    )
