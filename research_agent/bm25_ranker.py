@@ -97,4 +97,60 @@ def rank_papers(question: str, papers: List[Dict[str, Any]]) -> List[Dict[str, A
     ranked = sorted(papers, key=lambda x: x.get("score", 0.0), reverse=True)
     
     logger.info(f"Hybrid ranking complete. Returning top {min(len(ranked), TOP_K)} papers.")
-    return ranked[:TOP_K]
+    return ranked[:TOP_K]
+
+def hybrid_rerank(question: str, papers: List[Dict[str, Any]], semantic_scores: List[float], top_k: int = None) -> List[Dict[str, Any]]:
+    """
+    Rerank a list of papers using a hybrid scoring algorithm with pre-computed semantic scores:
+    Combines normalized BM25 scores (40% weight) and pre-computed normalized semantic scores (60% weight).
+    """
+    from research_agent.config import TOP_K
+    top_k = top_k or TOP_K
+
+    if not papers:
+        return []
+
+    # Step 1: BM25 Scoring
+    corpus = []
+    for p in papers:
+        # Gracefully handle missing title/abstract keys
+        title = p.get("title", "") or ""
+        abstract = p.get("abstract", "") or ""
+        full_text = f"{title} {abstract}"
+        corpus.append(tokenize(full_text))
+
+    bm25 = BM25Okapi(corpus)
+    query_tokens = tokenize(question)
+    
+    # Guard against empty query tokens
+    if not query_tokens:
+        logger.warning(f"No valid tokens found in question: '{question}' during reranking. Setting BM25 scores to 0.0.")
+        bm25_scores = [0.0] * len(papers)
+    else:
+        bm25_scores = bm25.get_scores(query_tokens)
+
+    # Step 2: Normalization and Hybrid scoring (Normalize both scores to [0, 1])
+    bm25_max = max(bm25_scores) or 1.0
+    sem_max = max(semantic_scores) or 1.0
+
+    # Ensure max values are positive for safe division
+    if bm25_max <= 0:
+        bm25_max = 1.0
+    if sem_max <= 0:
+        sem_max = 1.0
+
+    for i, paper in enumerate(papers):
+        raw_bm25 = float(bm25_scores[i])
+        raw_sem = float(semantic_scores[i])
+
+        norm_bm25 = max(0.0, raw_bm25) / bm25_max
+        norm_sem = max(0.0, raw_sem) / sem_max
+
+        paper["bm25_score"] = round(raw_bm25, 4)
+        paper["semantic_score"] = round(raw_sem, 4)
+        paper["score"] = round(BM25_WEIGHT * norm_bm25 + SEMANTIC_WEIGHT * norm_sem, 4)
+
+    # Step 3: Sort papers in descending order of Hybrid score
+    ranked = sorted(papers, key=lambda x: x.get("score", 0.0), reverse=True)
+    logger.info(f"V4 Hybrid reranking complete. Returning top {min(len(ranked), top_k)} papers.")
+    return ranked[:top_k]
