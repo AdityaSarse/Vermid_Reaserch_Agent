@@ -44,7 +44,6 @@ def save_to_store(embeddings: np.ndarray, papers: list, question: str):
         return
 
     vecs = np.array(new_embeddings).astype("float32")
-    faiss.normalize_L2(vecs)
     index.add(vecs)
     metadata.extend(new_papers)
 
@@ -66,7 +65,6 @@ def search_store(query_embedding: np.ndarray, question: str, top_k: int = 5):
         metadata = json.load(f)
 
     vec = np.array([query_embedding]).astype("float32")
-    faiss.normalize_L2(vec)
 
     k = min(top_k, index.ntotal)
     scores, indices = index.search(vec, k)
@@ -96,7 +94,6 @@ def search_store_full(query_embedding: np.ndarray, question: str, top_k: int = 2
         metadata = json.load(f)
 
     vec = np.array([query_embedding]).astype("float32")
-    faiss.normalize_L2(vec)
 
     k = min(top_k, index.ntotal)
     scores, indices = index.search(vec, k)
