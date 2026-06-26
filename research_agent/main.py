@@ -79,6 +79,10 @@ def research(input: QuestionInput):
     # 2. FAISS search — get candidates + semantic scores
     try:
         papers, semantic_scores = search_store_full(query_vec, top_k=20)
+        # Verify if the retrieved candidates are actually relevant by checking the top score
+        if semantic_scores and max(semantic_scores) < 0.87:
+            logger.info(f"Top FAISS candidate score {max(semantic_scores)} is below threshold 0.87. Treating as cache miss.")
+            papers, semantic_scores = None, None
     except Exception as e:
         logger.warning(f"FAISS search failed, falling back to PubMed: {e}", exc_info=True)
         papers, semantic_scores = None, None

@@ -75,6 +75,8 @@ def search_store(query_embedding: np.ndarray, top_k: int = 5):
     logger.info(f"FAISS returned {len(results)} results from local store.")
     return results
 
+SIMILARITY_THRESHOLD = 0.85  # below this = not relevant
+
 def search_store_full(query_embedding: np.ndarray, top_k: int = 20):
     """Return more candidates from FAISS for hybrid reranking."""
     if not os.path.exists(INDEX_PATH):
@@ -96,8 +98,14 @@ def search_store_full(query_embedding: np.ndarray, top_k: int = 20):
     for score, idx in zip(scores[0], indices[0]):
         if idx == -1:
             continue
+        if score < SIMILARITY_THRESHOLD:  # reject irrelevant candidates
+            continue
         results.append(metadata[idx].copy())
         semantic_scores.append(float(score))
 
-    logger.info(f"FAISS returned {len(results)} candidates for hybrid reranking.")
+    if not results:
+        logger.info("FAISS results below threshold. Treating as cache miss.")
+        return None, None
+
+    logger.info(f"FAISS returned {len(results)} candidates above threshold {SIMILARITY_THRESHOLD}.")
     return results, semantic_scores
