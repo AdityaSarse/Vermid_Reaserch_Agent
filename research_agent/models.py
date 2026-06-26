@@ -47,6 +47,10 @@ class Paper(BaseModel):
         None,
         description="The individual semantic relevance score before normalization."
     )
+    is_cached: Optional[bool] = Field(
+        False,
+        description="Whether the paper was retrieved from local FAISS cache."
+    )
 
 class ResearchResponse(BaseModel):
     """
@@ -59,4 +63,8 @@ class ResearchResponse(BaseModel):
     papers: List[Paper] = Field(
         ..., 
         description="The sorted list of top-ranked research papers relative to the query."
+    )
+    source: Optional[str] = Field(
+        "pubmed",
+        description="The source of the research results ('cached' or 'pubmed')."
     )
