@@ -78,11 +78,7 @@ def research(input: QuestionInput):
 
     # 2. FAISS search — get candidates + semantic scores
     try:
-        papers, semantic_scores = search_store_full(query_vec, top_k=20)
-        # Verify if the retrieved candidates are actually relevant by checking the top score
-        if semantic_scores and max(semantic_scores) < 0.87:
-            logger.info(f"Top FAISS candidate score {max(semantic_scores)} is below threshold 0.87. Treating as cache miss.")
-            papers, semantic_scores = None, None
+        papers, semantic_scores = search_store_full(query_vec, input.question, top_k=20)
     except Exception as e:
         logger.warning(f"FAISS search failed, falling back to PubMed: {e}", exc_info=True)
         papers, semantic_scores = None, None
@@ -125,7 +121,7 @@ def research(input: QuestionInput):
         try:
             texts = [p["title"] + " " + p["abstract"] for p in papers]
             embeddings = embed_texts(texts)
-            save_to_store(embeddings, papers)
+            save_to_store(embeddings, papers, input.question)
             
             # Compute cosine similarity: dot product of normalized vectors
             # embed_single returns 1D array, normalize it
