@@ -2,26 +2,26 @@
 
 @layer base {
   body {
-    @apply bg-white text-[#111111] antialiased;
+    @apply bg-[#0f0f0f] text-white antialiased;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
 }
 
-/* Premium Custom Scrollbars - Light Theme */
+/* Premium Custom Scrollbars - Dark Theme */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #FAFAFA;
+  background: #0f0f0f;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(17, 17, 17, 0.15);
+  background: #2a2a2a;
   border-radius: 9999px;
-  border: 2px solid #FAFAFA;
+  border: 2px solid #0f0f0f;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(17, 17, 17, 0.3);
+  background: #3a3a3a;
 }
 
 /* Minimal Pulse Animation for status dot */
