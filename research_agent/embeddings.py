@@ -19,7 +19,13 @@ def get_model() -> SentenceTransformer:
 
 def embed_texts(texts: list[str]) -> np.ndarray:
     model = get_model()
-    return model.encode(texts, show_progress_bar=False)
+    return model.encode(
+        texts,
+        batch_size=32,
+        show_progress_bar=False,
+        convert_to_numpy=True,
+        normalize_embeddings=True  # pre-normalize so no need later
+    )
 
 def score_papers_semantic(question: str, papers: list) -> list:
     texts = [p["title"] + " " + p["abstract"] for p in papers]
@@ -36,4 +42,9 @@ def score_papers_semantic(question: str, papers: list) -> list:
 
 def embed_single(text: str) -> np.ndarray:
     model = get_model()
-    return model.encode([text])[0]
+    return model.encode(
+        text,
+        show_progress_bar=False,
+        convert_to_numpy=True,
+        normalize_embeddings=True
+    )
