@@ -104,5 +104,16 @@ class TestPubMedClient(unittest.TestCase):
         self.assertEqual(paper["year"], None)  # PubDate was None
         self.assertEqual(paper["authors"], [])  # AuthorList was not a list
 
+    def test_clean_query(self):
+        from research_agent.pubmed_client import clean_query
+        q = "What is the relationship between Metformin and Vitamin B12 deficiency?"
+        cleaned = clean_query(q)
+        self.assertIn("metformin", cleaned)
+        self.assertIn("vitamin", cleaned)
+        self.assertIn("b12", cleaned)
+        self.assertIn("deficiency", cleaned)
+        self.assertNotIn("what", cleaned)
+        self.assertNotIn("relationship", cleaned)
+
 if __name__ == "__main__":
     unittest.main()

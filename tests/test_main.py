@@ -50,14 +50,14 @@ class TestMain(unittest.TestCase):
         if HAS_TEST_CLIENT:
             response = client.post("/research", json={"question": "unobtainable medical query"})
             self.assertEqual(response.status_code, 404)
-            self.assertIn("No papers found", response.json()["detail"])
+            self.assertIn("No PubMed articles found matching the term", response.json()["detail"])
         else:
             from research_agent.main import research
             q = QuestionInput(question="unobtainable medical query")
             with self.assertRaises(HTTPException) as context:
                 research(q)
             self.assertEqual(context.exception.status_code, 404)
-            self.assertIn("No papers found", context.exception.detail)
+            self.assertIn("No PubMed articles found matching the term", context.exception.detail)
 
     @patch("research_agent.main.hybrid_rerank")
     @patch("research_agent.main.save_to_store")
@@ -174,13 +174,13 @@ class TestMain(unittest.TestCase):
         if HAS_TEST_CLIENT:
             response = client.post("/research", json={"question": "error query"})
             self.assertEqual(response.status_code, 503)
-            self.assertIn("PubMed unavailable", response.json()["detail"])
+            self.assertIn("PubMed service is temporarily unavailable", response.json()["detail"])
         else:
             from research_agent.main import research
             with self.assertRaises(HTTPException) as context:
                 research(q)
             self.assertEqual(context.exception.status_code, 503)
-            self.assertIn("PubMed unavailable", context.exception.detail)
+            self.assertIn("PubMed service is temporarily unavailable", context.exception.detail)
 
 if __name__ == "__main__":
     unittest.main()
