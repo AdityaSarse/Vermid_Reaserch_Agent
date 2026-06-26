@@ -10,6 +10,7 @@ export default function App() {
   const [latency, setLatency] = useState(null);
   const [apiStatus, setApiStatus] = useState('checking'); // 'checking' | 'online' | 'offline'
   const [searchedQuery, setSearchedQuery] = useState('');
+  const [source, setSource] = useState('pubmed'); // 'pubmed' | 'cached'
 
   // Perform a health check on the FastAPI backend at startup
   useEffect(() => {
@@ -67,6 +68,7 @@ export default function App() {
 
       const data = await response.json();
       setPapers(data.papers || []);
+      setSource(data.source || 'pubmed');
     } catch (err) {
       console.error(err);
       setError(err.message || 'Failed to connect to the research server. Please ensure the backend is running.');
@@ -76,53 +78,28 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-100 flex flex-col font-sans select-none antialiased">
-      {/* Background Decorative Blobs */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-500/5 rounded-full filter blur-3xl pointer-events-none" />
-      <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full filter blur-3xl pointer-events-none" />
-
-      {/* Header / Navbar */}
-      <header className="sticky top-0 z-50 backdrop-blur-md bg-slate-950/80 border-b border-slate-900/80 px-6 py-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/20">
-              <svg className="w-5.5 h-5.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
-              </svg>
-            </div>
-            <div>
-              <span className="font-extrabold text-sm tracking-wider uppercase text-slate-200">VeriMed-X</span>
-              <div className="text-[10px] text-indigo-400 font-bold tracking-widest uppercase -mt-1">Research Agent</div>
-            </div>
-          </div>
-
-          {/* Backend Status indicator */}
-          <div className="flex items-center gap-2 bg-slate-900/60 border border-slate-800/80 px-3 py-1.5 rounded-lg">
-            <span className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">System Status:</span>
-            <div className="flex items-center gap-1.5">
-              <span className={`w-2 h-2 rounded-full ${
-                apiStatus === 'online' ? 'bg-emerald-500 pulse-active' :
-                apiStatus === 'offline' ? 'bg-rose-500' : 'bg-amber-500 animate-pulse'
-              }`} />
-              <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-350">
-                {apiStatus === 'online' ? 'Online' :
-                 apiStatus === 'offline' ? 'Offline' : 'Checking'}
-              </span>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-1 max-w-4xl mx-auto w-full px-6 py-10 flex flex-col gap-10">
+    <div className="min-h-screen bg-white text-[#111111] flex flex-col font-sans antialiased">
+      <div className="max-w-[720px] w-full mx-auto px-4 py-8 flex flex-col gap-6 flex-grow">
         
+        {/* Top Header Row */}
+        <header className="flex justify-between items-center text-[12px] text-[#999999] tracking-tight">
+          <span className="font-normal">VeriMed-X · Research Agent</span>
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#FAFAFA] border border-[#E5E5E5] text-[10px] font-medium tracking-normal select-none">
+            <span className={`w-1.5 h-1.5 rounded-full ${
+              apiStatus === 'online' ? 'bg-emerald-500 pulse-active' :
+              apiStatus === 'offline' ? 'bg-rose-500' : 'bg-amber-500 animate-pulse'
+            }`} />
+            <span>SYSTEM STATUS · {apiStatus === 'online' ? 'ONLINE' : apiStatus === 'offline' ? 'OFFLINE' : 'CHECKING'}</span>
+          </div>
+        </header>
+
         {/* Hero Section */}
-        <section className="text-center flex flex-col gap-4">
-          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-indigo-300 bg-clip-text text-transparent">
-            Medical Search & Re-Ranking
+        <section className="flex flex-col gap-2 mt-4">
+          <h1 className="text-[28px] font-medium text-[#111111] tracking-tight leading-tight">
+            What do you want to know?
           </h1>
-          <p className="max-w-2xl mx-auto text-sm md:text-base text-slate-400 leading-relaxed font-medium">
-            Search PubMed publications using hybrid semantic algorithms. Matches keywords using <span className="text-sky-400 font-semibold">BM25</span>, computes semantic matches via <span className="text-purple-400 font-semibold">S-PubMedBert</span> embeddings, and caches queries locally in a <span className="text-indigo-400 font-semibold">FAISS</span> vector store.
+          <p className="text-[14px] text-[#666666] leading-relaxed">
+            Search 35M+ PubMed publications with hybrid semantic ranking
           </p>
         </section>
 
@@ -136,52 +113,40 @@ export default function App() {
           />
         </section>
 
-        {/* Status / Latency Stats */}
+        {/* Divider and Results Header */}
         {(latency || papers.length > 0) && !isLoading && (
-          <div className="flex items-center justify-between border-b border-slate-900 pb-3 text-xs text-slate-500 font-bold uppercase tracking-wider px-1">
-            <div className="flex items-center gap-2">
-              <span>Results for:</span>
-              <span className="text-indigo-400 normal-case italic font-medium">"{searchedQuery}"</span>
-            </div>
-            <div className="flex items-center gap-4">
-              <span>{papers.length} publications</span>
-              {latency && (
-                <span className="flex items-center gap-1">
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                  </svg>
-                  {latency}s latency
+          <section className="w-full mt-2">
+            <div className="flex items-center justify-between border-b border-[#E5E5E5] pb-2 text-[13px] text-[#666666]">
+              <div>
+                {papers.length} publications for <span className="text-[#111111] font-medium">"{searchedQuery}"</span>
+              </div>
+              <div className="flex items-center gap-3">
+                {latency && <span className="font-mono text-[12px]">{latency}s</span>}
+                <span className="flex items-center gap-1 select-none font-medium text-[#111111]">
+                  {source === 'cached' ? '⚡ cached' : '🔍 PubMed'}
                 </span>
-              )}
+              </div>
             </div>
-          </div>
+          </section>
         )}
 
-        {/* Results / Skeleton / Error Panel */}
-        <section className="w-full flex-1">
+        {/* Results / Loading / Error List */}
+        <section className="w-full flex-1 flex flex-col gap-4 mt-2">
           {isLoading && <LoadingSkeleton />}
 
           {error && (
-            <div className="bg-rose-950/20 border border-rose-500/20 rounded-xl p-6 text-center flex flex-col items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-400">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                </svg>
-              </div>
-              <h4 className="text-base font-bold text-rose-200">Search Failed</h4>
-              <p className="text-sm text-slate-400 max-w-md leading-relaxed font-medium">
+            <div className="bg-[#FFF5F5] border border-[#FEE2E2] text-rose-800 rounded-[12px] p-5 text-center flex flex-col items-center gap-2">
+              <h4 className="text-[14px] font-medium">Search Failed</h4>
+              <p className="text-[13px] text-rose-750 max-w-md leading-relaxed">
                 {error}
               </p>
             </div>
           )}
 
           {!isLoading && !error && papers.length === 0 && searchedQuery && (
-            <div className="bg-slate-900/10 border border-slate-900/80 rounded-xl p-8 text-center flex flex-col items-center gap-2">
-              <svg className="w-8 h-8 text-slate-600 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-              </svg>
-              <h4 className="text-sm font-bold text-slate-450">No Publications Found</h4>
-              <p className="text-xs text-slate-500 max-w-sm font-medium">
+            <div className="bg-[#FAFAFA] border border-[#E5E5E5] rounded-[12px] p-8 text-center flex flex-col items-center gap-1.5">
+              <h4 className="text-[14px] font-medium text-[#111111]">No Publications Found</h4>
+              <p className="text-[13px] text-[#666666] max-w-sm leading-relaxed">
                 No matching articles found on PubMed or local store. Try checking the query spelling or using broader terms.
               </p>
             </div>
@@ -195,47 +160,29 @@ export default function App() {
             </div>
           )}
         </section>
-      </main>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-900/80 py-6 px-6 text-center text-xs text-slate-650 font-medium">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p>© 2026 VeriMed-X Intelligent Medical Research Portal.</p>
-          <div className="flex items-center gap-4 text-slate-500 font-semibold uppercase tracking-wider">
-            <a href="https://pubmed.ncbi.nlm.nih.gov/" target="_blank" className="hover:text-indigo-400">NCBI PubMed</a>
-            <span>•</span>
-            <a href="https://huggingface.co/pritamdeka/S-PubMedBert-MS-MARCO" target="_blank" className="hover:text-indigo-400">PubMedBERT</a>
-          </div>
-        </div>
-      </footer>
+        {/* Small Bottom Margin */}
+        <footer className="h-8" />
+      </div>
     </div>
   );
 }
 
-// Skeleton loading cards for premium UI feedback
+// Skeleton loading cards matching the minimal design
 const LoadingSkeleton = () => (
   <div className="flex flex-col gap-4 w-full">
     {[1, 2, 3].map((i) => (
-      <div key={i} className="animate-pulse bg-slate-900/10 border border-slate-850/80 rounded-xl p-5 md:p-6 flex flex-col gap-4">
-        <div className="flex flex-col md:flex-row justify-between items-start gap-4">
-          <div className="flex-1 w-full">
-            <div className="flex gap-2 mb-2.5">
-              <div className="h-4 w-12 bg-slate-800 rounded"></div>
-              <div className="h-4 w-24 bg-slate-800 rounded"></div>
-            </div>
-            <div className="h-6 w-3/4 bg-slate-800 rounded mb-2.5"></div>
-            <div className="h-4.5 w-1/2 bg-slate-800 rounded"></div>
-          </div>
-          <div className="flex gap-2">
-            <div className="h-9 w-16 bg-slate-850 rounded-lg"></div>
-            <div className="h-9 w-16 bg-slate-850 rounded-lg"></div>
-            <div className="h-9 w-16 bg-slate-850 rounded-lg"></div>
-          </div>
+      <div key={i} className="animate-pulse bg-[#FAFAFA] border border-[#E5E5E5] rounded-[12px] p-5 flex flex-col gap-3.5">
+        <div className="flex gap-2">
+          <div className="h-4 w-12 bg-[#E5E5E5] rounded-full"></div>
+          <div className="h-4 w-24 bg-[#E5E5E5] rounded-full"></div>
         </div>
-        <div className="space-y-2.5">
-          <div className="h-4 w-full bg-slate-850 rounded"></div>
-          <div className="h-4 w-full bg-slate-850 rounded"></div>
-          <div className="h-4 w-2/3 bg-slate-850 rounded"></div>
+        <div className="h-5 w-3/4 bg-[#E5E5E5] rounded"></div>
+        <div className="h-4 w-1/2 bg-[#E5E5E5] rounded"></div>
+        <div className="space-y-2 pt-2 border-t border-[#E5E5E5]/20">
+          <div className="h-3 w-full bg-[#E5E5E5] rounded"></div>
+          <div className="h-3 w-full bg-[#E5E5E5] rounded"></div>
+          <div className="h-3 w-2/3 bg-[#E5E5E5] rounded"></div>
         </div>
       </div>
     ))}
