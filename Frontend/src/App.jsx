@@ -78,24 +78,29 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-[#111111] flex flex-col font-sans antialiased">
-      <div className="max-w-[720px] w-full mx-auto px-4 py-8 flex flex-col gap-6 flex-grow">
+    <div className="min-h-screen bg-[#0f0f0f] text-white flex flex-col font-sans antialiased">
+      
+      {/* Fixed Top Right Status Indicator */}
+      <div className="fixed top-6 right-6 z-50 flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#181818] border border-[#2a2a2a] text-[10px] font-medium tracking-wider text-[#666666] select-none">
+        <span className={`w-1.5 h-1.5 rounded-full ${
+          apiStatus === 'online' ? 'bg-[#22c55e] pulse-active' :
+          apiStatus === 'offline' ? 'bg-rose-500' : 'bg-amber-500 animate-pulse'
+        }`} />
+        <span>SYSTEM STATUS · {apiStatus === 'online' ? 'ONLINE' : apiStatus === 'offline' ? 'OFFLINE' : 'CHECKING'}</span>
+      </div>
+
+      <div className="max-w-[720px] w-full mx-auto px-4 py-12 flex flex-col gap-6 flex-grow">
         
-        {/* Top Header Row */}
-        <header className="flex justify-between items-center text-[12px] text-[#999999] tracking-tight">
-          <span className="font-normal">VeriMed-X · Research Agent</span>
-          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#FAFAFA] border border-[#E5E5E5] text-[10px] font-medium tracking-normal select-none">
-            <span className={`w-1.5 h-1.5 rounded-full ${
-              apiStatus === 'online' ? 'bg-emerald-500 pulse-active' :
-              apiStatus === 'offline' ? 'bg-rose-500' : 'bg-amber-500 animate-pulse'
-            }`} />
-            <span>SYSTEM STATUS · {apiStatus === 'online' ? 'ONLINE' : apiStatus === 'offline' ? 'OFFLINE' : 'CHECKING'}</span>
-          </div>
-        </header>
+        {/* Top Center Label */}
+        <div className="text-center">
+          <span className="text-[11px] uppercase tracking-[0.15em] text-[#666666] font-medium">
+            VERIMED-X · RESEARCH AGENT
+          </span>
+        </div>
 
         {/* Hero Section */}
-        <section className="flex flex-col gap-2 mt-4">
-          <h1 className="text-[28px] font-medium text-[#111111] tracking-tight leading-tight">
+        <section className="flex flex-col gap-2 text-center mt-6 mb-2">
+          <h1 className="text-[32px] font-semibold text-white tracking-tight leading-tight">
             What do you want to know?
           </h1>
           <p className="text-[14px] text-[#666666] leading-relaxed">
@@ -104,7 +109,7 @@ export default function App() {
         </section>
 
         {/* Search Bar Section */}
-        <section className="w-full">
+        <section className="w-full mb-2">
           <SearchBar 
             query={query} 
             setQuery={setQuery} 
@@ -113,17 +118,18 @@ export default function App() {
           />
         </section>
 
-        {/* Divider and Results Header */}
+        {/* Results Header */}
         {(latency || papers.length > 0) && !isLoading && (
-          <section className="w-full mt-2">
-            <div className="flex items-center justify-between border-b border-[#E5E5E5] pb-2 text-[13px] text-[#666666]">
+          <section className="w-full">
+            <div className="flex items-center justify-between text-[13px] text-[#666666]">
               <div>
-                {papers.length} publications for <span className="text-[#111111] font-medium">"{searchedQuery}"</span>
+                <span className="font-semibold text-white">{papers.length} publications</span>{' '}
+                <span>for "{searchedQuery}"</span>
               </div>
-              <div className="flex items-center gap-3">
-                {latency && <span className="font-mono text-[12px]">{latency}s</span>}
-                <span className="flex items-center gap-1 select-none font-medium text-[#111111]">
-                  {source === 'cached' ? '⚡ cached' : '🔍 PubMed'}
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e]" />
+                <span>
+                  {latency}s · {source === 'cached' ? 'FAISS cache' : 'PubMed API'}
                 </span>
               </div>
             </div>
@@ -131,21 +137,21 @@ export default function App() {
         )}
 
         {/* Results / Loading / Error List */}
-        <section className="w-full flex-1 flex flex-col gap-4 mt-2">
+        <section className="w-full flex-1 flex flex-col gap-2">
           {isLoading && <LoadingSkeleton />}
 
           {error && (
-            <div className="bg-[#FFF5F5] border border-[#FEE2E2] text-rose-800 rounded-[12px] p-5 text-center flex flex-col items-center gap-2">
-              <h4 className="text-[14px] font-medium">Search Failed</h4>
-              <p className="text-[13px] text-rose-750 max-w-md leading-relaxed">
+            <div className="bg-[#1a1313] border border-rose-950/50 text-rose-450 rounded-[10px] p-5 text-center flex flex-col items-center gap-2">
+              <h4 className="text-[14px] font-semibold text-rose-200">Search Failed</h4>
+              <p className="text-[13px] text-rose-350 max-w-md leading-relaxed">
                 {error}
               </p>
             </div>
           )}
 
           {!isLoading && !error && papers.length === 0 && searchedQuery && (
-            <div className="bg-[#FAFAFA] border border-[#E5E5E5] rounded-[12px] p-8 text-center flex flex-col items-center gap-1.5">
-              <h4 className="text-[14px] font-medium text-[#111111]">No Publications Found</h4>
+            <div className="bg-[#181818] border border-[#2a2a2a] rounded-[10px] p-8 text-center flex flex-col items-center gap-1.5">
+              <h4 className="text-[14px] font-semibold text-white">No Publications Found</h4>
               <p className="text-[13px] text-[#666666] max-w-sm leading-relaxed">
                 No matching articles found on PubMed or local store. Try checking the query spelling or using broader terms.
               </p>
@@ -153,7 +159,7 @@ export default function App() {
           )}
 
           {!isLoading && !error && papers.length > 0 && (
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
               {papers.map((paper) => (
                 <PaperCard key={paper.pmid} paper={paper} />
               ))}
@@ -168,21 +174,21 @@ export default function App() {
   );
 }
 
-// Skeleton loading cards matching the minimal design
+// Skeleton loading cards matching the minimal dark design
 const LoadingSkeleton = () => (
-  <div className="flex flex-col gap-4 w-full">
+  <div className="flex flex-col gap-2 w-full">
     {[1, 2, 3].map((i) => (
-      <div key={i} className="animate-pulse bg-[#FAFAFA] border border-[#E5E5E5] rounded-[12px] p-5 flex flex-col gap-3.5">
+      <div key={i} className="animate-pulse bg-[#181818] border border-[#2a2a2a] rounded-[10px] p-5 flex flex-col gap-3.5">
         <div className="flex gap-2">
-          <div className="h-4 w-12 bg-[#E5E5E5] rounded-full"></div>
-          <div className="h-4 w-24 bg-[#E5E5E5] rounded-full"></div>
+          <div className="h-4 w-12 bg-[#252525] rounded-full"></div>
+          <div className="h-4 w-24 bg-[#252525] rounded-full"></div>
         </div>
-        <div className="h-5 w-3/4 bg-[#E5E5E5] rounded"></div>
-        <div className="h-4 w-1/2 bg-[#E5E5E5] rounded"></div>
-        <div className="space-y-2 pt-2 border-t border-[#E5E5E5]/20">
-          <div className="h-3 w-full bg-[#E5E5E5] rounded"></div>
-          <div className="h-3 w-full bg-[#E5E5E5] rounded"></div>
-          <div className="h-3 w-2/3 bg-[#E5E5E5] rounded"></div>
+        <div className="h-5 w-3/4 bg-[#252525] rounded"></div>
+        <div className="h-4 w-1/2 bg-[#252525] rounded"></div>
+        <div className="space-y-2 pt-2 border-t border-[#2a2a2a]/20">
+          <div className="h-3 w-full bg-[#252525] rounded"></div>
+          <div className="h-3 w-full bg-[#252525] rounded"></div>
+          <div className="h-3 w-2/3 bg-[#252525] rounded"></div>
         </div>
       </div>
     ))}
