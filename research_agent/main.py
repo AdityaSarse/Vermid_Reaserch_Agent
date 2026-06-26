@@ -77,6 +77,7 @@ def research(input: QuestionInput):
         )
 
     # 2. FAISS search — get candidates + semantic scores
+    papers_were_cached = False
     try:
         papers, semantic_scores = search_store_full(query_vec, input.question, top_k=20)
     except Exception as e:
@@ -87,6 +88,9 @@ def research(input: QuestionInput):
         # 3a. Hybrid rerank from FAISS candidates
         try:
             ranked = hybrid_rerank(input.question, papers, semantic_scores)
+            papers_were_cached = True
+            for p in ranked:
+                p["is_cached"] = True
             logger.info("V4 Hybrid rerank from FAISS cache.")
         except Exception as e:
             logger.error(f"Reranking FAISS candidates failed: {e}", exc_info=True)
@@ -139,11 +143,14 @@ def research(input: QuestionInput):
             # Fallback to standard ranking if embedding/caching fails entirely
             try:
                 ranked = rank_papers(input.question, papers)
+                for p in ranked:
+                    p["is_cached"] = False
                 elapsed = round(time.time() - start, 2)
                 logger.info(f"Request resolved in {elapsed}s using basic ranker. Returning top {len(ranked)} papers.")
                 return ResearchResponse(
                     question=input.question,
-                    papers=[Paper(**p) for p in ranked]
+                    papers=[Paper(**p) for p in ranked],
+                    source="pubmed"
                 )
             except Exception as ex:
                 logger.error(f"Fallback ranking failed: {ex}", exc_info=True)
@@ -154,6 +161,8 @@ def research(input: QuestionInput):
 
         try:
             ranked = hybrid_rerank(input.question, papers, semantic_scores)
+            for p in ranked:
+                p["is_cached"] = False
             logger.info("V4 Hybrid rerank from fresh PubMed fetch.")
         except Exception as e:
             logger.error(f"Hybrid reranking after PubMed fetch failed: {e}", exc_info=True)
@@ -165,9 +174,11 @@ def research(input: QuestionInput):
     elapsed = round(time.time() - start, 2)
     logger.info(f"Request resolved in {elapsed}s. Returning top {len(ranked)} papers.")
 
+    source_val = "cached" if papers_were_cached else "pubmed"
     return ResearchResponse(
         question=input.question,
-        papers=[Paper(**p) for p in ranked]
+        papers=[Paper(**p) for p in ranked],
+        source=source_val
     )
 
 @app.get(
