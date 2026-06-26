@@ -107,6 +107,18 @@ def parse_pubmed_records(records: Dict[str, Any]) -> List[Dict[str, Any]]:
     logger.info(f"Successfully parsed {len(papers)} papers from PubMed response.")
     return papers
 
+def clean_query(question: str) -> str:
+    """Strip conversational words, keep medical terms."""
+    stopwords = {
+        "what", "are", "the", "is", "does", "do", "can", "how", "why",
+        "when", "which", "a", "an", "of", "in", "on", "for", "to",
+        "long", "term", "effects", "relationship", "between", "reduce",
+        "risk", "cause", "effective"
+    }
+    tokens = re.findall(r'\b[a-zA-Z0-9\-]+\b', question.lower())
+    filtered = [t for t in tokens if t not in stopwords]
+    return " ".join(filtered)
+
 def search_pubmed(question: str) -> List[Dict[str, Any]]:
     """
     Search PubMed database for medical articles matching the search term.
@@ -123,11 +135,12 @@ def search_pubmed(question: str) -> List[Dict[str, Any]]:
     if not Entrez.email:
         logger.warning("Attempting to search PubMed without ENTREZ_EMAIL set.")
 
-    logger.info(f"Initiating PubMed search for query: '{question}' (Max results: {MAX_RESULTS})")
+    query = clean_query(question)
+    logger.info(f"Initiating PubMed search for query: '{question}' (Cleaned: '{query}') (Max results: {MAX_RESULTS})")
 
     # Step 1: Query NCBI esearch to get matching PubMed IDs (PMIDs)
     try:
-        with Entrez.esearch(db="pubmed", term=question, retmax=MAX_RESULTS) as handle:
+        with Entrez.esearch(db="pubmed", term=query, retmax=MAX_RESULTS) as handle:
             record = Entrez.read(handle)
     except Exception as e:
         logger.error(f"NCBI esearch failed for query '{question}': {e}", exc_info=True)
